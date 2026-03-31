@@ -98,6 +98,12 @@ Extension:
 - `npm run dev` - extension dev build/watch
 - `npm run build` - extension production build
 
+## Upcoming
+
+- Multi-select credentials with bulk actions (delete, restore, category change)
+- Faster bulk tagging and category assignment workflows
+- Better extension quick-capture UX for new credentials
+
 ## License
 
 Private project. Add a license file if you plan to make this public.
