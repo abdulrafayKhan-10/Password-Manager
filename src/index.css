@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-display antialiased text-slate-900 dark:text-slate-100 bg-background-light dark:bg-background-dark;
+  }
+
+  /* Custom scrollbar for dark mode */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Range input accent color */
+  input[type='range'] {
+    accent-color: #4913ec;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    background: rgba(32, 25, 51, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(73, 19, 236, 0.1);
+  }
+
+  .soft-glow {
+    box-shadow: 0 0 40px -10px rgba(73, 19, 236, 0.3);
+  }
+}
