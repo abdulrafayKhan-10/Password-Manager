@@ -12,8 +12,15 @@ export const VaultPage: React.FC = () => {
   const setSearchQuery = useVaultStore((s) => s.setSearchQuery);
   const selectedId = useVaultStore((s) => s.selectedId);
   const selectCredential = useVaultStore((s) => s.selectCredential);
+  const deleteCredential = useVaultStore((s) => s.deleteCredential);
+  const restoreCredential = useVaultStore((s) => s.restoreCredential);
+  const hardDeleteCredential = useVaultStore((s) => s.hardDeleteCredential);
+  const toggleFavorite = useVaultStore((s) => s.toggleFavorite);
+  const pushNotification = useVaultStore((s) => s.pushNotification);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [AddModalComponent, setAddModalComponent] = useState<React.ComponentType<{
     open: boolean;
     onClose: () => void;
@@ -23,6 +30,35 @@ export const VaultPage: React.FC = () => {
 
   const filtered = selectFilteredCredentials(credentials, sidebarFilter, searchQuery, selectedCategory);
   const selected = filtered.find((c) => c.id === selectedId) ?? null;
+
+  const toggleChecked = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const selectAllVisible = () => {
+    setSelectedIds(filtered.map((c) => c.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const exitMultiSelect = () => {
+    setMultiSelectMode(false);
+    setSelectedIds([]);
+  };
+
+  const runBulk = async (operation: 'favorite' | 'trash' | 'restore' | 'delete-forever') => {
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      if (operation === 'favorite') await toggleFavorite(id);
+      if (operation === 'trash') await deleteCredential(id);
+      if (operation === 'restore') await restoreCredential(id);
+      if (operation === 'delete-forever') await hardDeleteCredential(id);
+    }
+    pushNotification(`Applied action to ${selectedIds.length} item(s).`, 'success');
+    setSelectedIds([]);
+  };
 
   const openAdd = async () => {
     if (!AddModalComponent) {
@@ -58,6 +94,19 @@ export const VaultPage: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <button
+            onClick={() => {
+              if (multiSelectMode) {
+                exitMultiSelect();
+                return;
+              }
+              setMultiSelectMode(true);
+              selectCredential(null);
+            }}
+            className="px-3 py-2 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            {multiSelectMode ? 'Done' : 'Multi-select'}
+          </button>
           {sidebarFilter !== 'trash' && (
             <button
               onClick={openAdd}
@@ -68,6 +117,63 @@ export const VaultPage: React.FC = () => {
             </button>
           )}
         </header>
+
+        {multiSelectMode && (
+          <div className="h-14 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center gap-2 text-sm bg-slate-50/70 dark:bg-slate-900/30">
+            <span className="text-slate-500 dark:text-slate-400 mr-1">
+              {selectedIds.length} selected
+            </span>
+            <button
+              onClick={selectAllVisible}
+              className="px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Select all visible
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-2.5 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Clear
+            </button>
+            <div className="ml-auto flex items-center gap-2">
+              {sidebarFilter === 'trash' ? (
+                <>
+                  <button
+                    disabled={selectedIds.length === 0}
+                    onClick={() => runBulk('restore')}
+                    className="px-2.5 py-1.5 rounded-md bg-emerald-600 text-white disabled:opacity-50"
+                  >
+                    Restore
+                  </button>
+                  <button
+                    disabled={selectedIds.length === 0}
+                    onClick={() => runBulk('delete-forever')}
+                    className="px-2.5 py-1.5 rounded-md bg-red-600 text-white disabled:opacity-50"
+                  >
+                    Delete forever
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    disabled={selectedIds.length === 0}
+                    onClick={() => runBulk('favorite')}
+                    className="px-2.5 py-1.5 rounded-md bg-amber-500 text-white disabled:opacity-50"
+                  >
+                    Favorite
+                  </button>
+                  <button
+                    disabled={selectedIds.length === 0}
+                    onClick={() => runBulk('trash')}
+                    className="px-2.5 py-1.5 rounded-md bg-red-600 text-white disabled:opacity-50"
+                  >
+                    Move to trash
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Item list */}
         <div className="flex-1 overflow-y-auto">
@@ -95,7 +201,16 @@ export const VaultPage: React.FC = () => {
                   key={c.id}
                   credential={c}
                   selected={c.id === selectedId}
-                  onSelect={() => selectCredential(c.id === selectedId ? null : c.id)}
+                  multiSelectMode={multiSelectMode}
+                  checked={selectedIds.includes(c.id)}
+                  onToggleChecked={() => toggleChecked(c.id)}
+                  onSelect={() => {
+                    if (multiSelectMode) {
+                      toggleChecked(c.id);
+                    } else {
+                      selectCredential(c.id === selectedId ? null : c.id);
+                    }
+                  }}
                 />
               ))}
             </div>

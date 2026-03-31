@@ -7,12 +7,18 @@ import type { Credential } from '@/types';
 interface CredentialRowProps {
   credential: Credential;
   selected: boolean;
+  multiSelectMode?: boolean;
+  checked?: boolean;
+  onToggleChecked?: () => void;
   onSelect: () => void;
 }
 
 export const CredentialRow: React.FC<CredentialRowProps> = ({
   credential,
   selected,
+  multiSelectMode,
+  checked,
+  onToggleChecked,
   onSelect,
 }) => {
   // Derive favicon URL from website
@@ -34,6 +40,25 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({
           : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30'
       )}
     >
+      {multiSelectMode && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleChecked?.();
+          }}
+          className={cn(
+            'w-5 h-5 rounded border shrink-0 flex items-center justify-center transition-colors',
+            checked
+              ? 'bg-primary border-primary text-white'
+              : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+          )}
+          aria-label={checked ? 'Deselect credential' : 'Select credential'}
+        >
+          {checked && <span className="material-symbols-outlined text-sm leading-none">check</span>}
+        </button>
+      )}
+
       {/* Icon */}
       <div className="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden">
         {favicon ? (
